@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Group Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Connect to the server using Socket.IO
+        const socket = io();
+
+
+        let username; // Variable to store the username
+
+        // Handle form submission
+        function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                if (!username) {
+                    // Get the username from the user for the first message
+                    username = prompt('Enter your username:');
+                }
+                // Send the message and username (if available) to the server
+                socket.emit('chatMessage', { username, message });
+                messageInput.value = '';
+            }
+        }
+
+        // Handle received messages
+
+        socket.on('chatMessage', (data) => {
+            const { username, message, timestamp } = data;
+            const messageContainer = document.getElementById('messages');
+            const newMessage = document.createElement('p');
+            newMessage.innerHTML = `<strong>${username} (${timestamp}): </strong>${message}`;
+            messageContainer.appendChild(newMessage);
+        });
+
+        function fetchUsers() {
+            fetch('/users')
+                .then((response) => response.json())
+                .then((data) => {
+                    const userList = document.getElementById('userList');
+                    userList.innerHTML = '';
+                    data.forEach((user) => {
+                        const userItem = document.createElement('li');
+                        userItem.innerText = user;
+                        userList.appendChild(userItem);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error fetching users:', error);
+                });
+        }
+
+        // Call fetchUsers initially and then every 5 seconds to keep the user list updated
+        fetchUsers();
+        setInterval(fetchUsers, 5000);
+    </script>
+    <h2>Users:</h2>
+    <ul id="userList"></ul>
+</head>
+
+<body>
+    <h1>Group Chat</h1>
+    <div id="messages"></div>
+    <input type="text" id="message" placeholder="Type a message" />
+    <button onclick="sendMessage()">Send</button>
+</body>
+
+</html>
